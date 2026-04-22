@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Folio — Book Recommender</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #181818;
+      --surface: #222;
+      --surface2: #2a2a2a;
+      --border: #333;
+      --border2: #404040;
+      --accent: #c9a96e;
+      --accent-dim: rgba(201, 169, 110, 0.10);
+      --text: #f0ece4;
+      --text2: #aaa;
+      --text3: #666;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* ── NAV ── */
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(24, 24, 24, 0.97);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      cursor: pointer;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+    }
+
+    .nav-link {
+      font-size: 12px;
+      color: var(--text2);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 400;
+      transition: color 0.2s;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--text);
+    }
+
+    .nav-btn {
+      font-size: 11px;
+      padding: 7px 18px;
+      border: 1px solid var(--border2);
+      border-radius: 2px;
+      color: var(--text2);
+      background: transparent;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 72px 40px 60px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(90deg, rgba(201, 169, 110, 0.03) 0px, rgba(201, 169, 110, 0.03) 1px, transparent 1px, transparent 40px), repeating-linear-gradient(0deg, rgba(201, 169, 110, 0.02) 0px, rgba(201, 169, 110, 0.02) 1px, transparent 1px, transparent 60px), radial-gradient(ellipse 80% 60% at 70% 50%, rgba(201, 169, 110, 0.06) 0%, transparent 70%), linear-gradient(160deg, #1f1a10 0%, #181818 50%, #0f0f14 100%);
+      z-index: 0;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 45%;
+      background: repeating-linear-gradient(90deg, transparent 0px, transparent 18px, rgba(201, 169, 110, 0.04) 18px, rgba(201, 169, 110, 0.04) 20px);
+      z-index: 0;
+    }
+
+    .hero-line,
+    .hero-title,
+    .hero-sub {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-line {
+      width: 32px;
+      height: 1px;
+      background: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .hero-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 56px;
+      font-weight: 300;
+      color: var(--text);
+      line-height: 1.1;
+      margin-bottom: 16px;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 16px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 480px;
+      font-weight: 300;
+    }
+
+    /* ── SECTIONS ── */
+    .section {
+      padding: 36px 40px 12px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    .section-see {
+      font-size: 11px;
+      color: var(--text3);
+      cursor: pointer;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+
+    .section-see:hover {
+      color: var(--accent);
+    }
+
+    /* ── HORIZONTAL CARDS ── */
+    .cards-row {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      scrollbar-width: none;
+    }
+
+    .cards-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .book-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      min-width: 160px;
+      max-width: 160px;
+      cursor: pointer;
+      transition: border-color 0.25s, transform 0.2s;
+      flex-shrink: 0;
+    }
+
+    .book-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+
+    .book-cover {
+      width: 100%;
+      height: 104px;
+      border-radius: 2px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      background: var(--surface2);
+    }
+
+    .book-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .cover-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+    }
+
+    .bc1 {
+      background: linear-gradient(160deg, #1a1510, #2a2018);
+    }
+
+    .bc2 {
+      background: linear-gradient(160deg, #101520, #181d2a);
+    }
+
+    .bc3 {
+      background: linear-gradient(160deg, #1a1015, #2a1820);
+    }
+
+    .bc4 {
+      background: linear-gradient(160deg, #151a10, #202a18);
+    }
+
+    .bc5 {
+      background: linear-gradient(160deg, #151015, #221822);
+    }
+
+    .cover-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px;
+      font-weight: 300;
+      color: rgba(201, 169, 110, 0.3);
+      line-height: 1;
+    }
+
+    .book-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.3;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .book-author {
+      font-size: 12px;
+      color: var(--text3);
+      margin-bottom: 7px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .book-desc {
+      font-size: 11px;
+      color: var(--text3);
+      line-height: 1.5;
+      margin-bottom: 7px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .book-rating {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .rating-bar {
+      flex: 1;
+      height: 1px;
+      background: var(--border2);
+    }
+
+    .rating-fill {
+      height: 100%;
+      background: var(--accent);
+    }
+
+    .rating-num {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    /* ── SKELETON ── */
+    .skeleton-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      min-width: 148px;
+      max-width: 148px;
+      flex-shrink: 0;
+    }
+
+    .skel {
+      background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0
+      }
+
+      100% {
+        background-position: -200% 0
+      }
+    }
+
+    .skel-cover {
+      width: 100%;
+      height: 104px;
+      border-radius: 2px;
+      margin-bottom: 10px;
+    }
+
+    .skel-line {
+      height: 10px;
+      border-radius: 2px;
+      margin-bottom: 6px;
+    }
+
+    /* ── ERROR ── */
+    .api-error {
+      padding: 20px;
+      color: var(--text3);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .api-error span {
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    /* ── GENRE CHIPS ── */
+    .genre-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 0 40px 28px;
+    }
+
+    .genre-chip {
+      font-size: 12px;
+      padding: 6px 16px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text3);
+      cursor: pointer;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .genre-chip:hover,
+    .genre-chip.selected {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .sdiv {
+      height: 1px;
+      background: var(--border);
+      margin: 4px 40px;
+    }
+
+    /* ── VIEW ALL PAGE ── */
+    .va-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 40px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .va-back {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text3);
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .va-back:hover {
+      color: var(--accent);
+    }
+
+    .va-back svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+    }
+
+    .va-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 400;
+      color: var(--text);
+    }
+
+    .va-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 20px;
+      padding: 32px 40px 60px;
+    }
+
+    .grid-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.25s, transform 0.2s;
+    }
+
+    .grid-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+
+    .grid-cover {
+      width: 100%;
+      height: 200px;
+      border-radius: 2px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      background: var(--surface2);
+    }
+
+    .grid-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .grid-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+
+    .grid-author {
+      font-size: 12px;
+      color: var(--text3);
+      margin-bottom: 6px;
+    }
+
+    .grid-desc {
+      font-size: 12px;
+      color: var(--text3);
+      line-height: 1.5;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .skel-grid-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+    }
+
+    .skel-grid-cover {
+      width: 100%;
+      height: 200px;
+      border-radius: 2px;
+      margin-bottom: 12px;
+    }
+
+    /* ── SEARCH PAGE ── */
+    .search-hero {
+      padding: 52px 40px 40px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 2;
+    }
+
+    .search-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(90deg, rgba(201, 169, 110, 0.02) 0px, rgba(201, 169, 110, 0.02) 1px, transparent 1px, transparent 40px), linear-gradient(160deg, #141210 0%, #181818 60%);
+      z-index: 0;
+    }
+
+    .search-hero-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .search-label {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .search-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 40px;
+      font-weight: 300;
+      color: var(--text);
+      margin-bottom: 28px;
+      line-height: 1.1;
+    }
+
+    .search-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .search-bar-wrap {
+      display: flex;
+      gap: 0;
+      max-width: 600px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 14px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-right: none;
+      border-radius: 2px 0 0 2px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+      letter-spacing: 0.01em;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent);
+    }
+
+    .search-input::placeholder {
+      color: var(--text3);
+    }
+
+    .search-btn {
+      padding: 14px 24px;
+      background: var(--accent);
+      border: none;
+      border-radius: 0 2px 2px 0;
+      color: #111;
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      white-space: nowrap;
+    }
+
+    .search-btn:hover {
+      opacity: 0.88;
+    }
+
+    .search-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 40px;
+      border-bottom: 1px solid var(--border);
+      margin-top: 0;
+    }
+
+    .search-tab {
+      font-size: 11px;
+      padding: 16px 20px;
+      color: var(--text3);
+      cursor: pointer;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.2s;
+    }
+
+    .search-tab:hover {
+      color: var(--text2);
+    }
+
+    .search-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .search-results {
+      padding: 32px 40px 60px;
+    }
+
+    .search-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 40px;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .search-empty-icon {
+      font-size: 32px;
+      opacity: 0.3;
+    }
+
+    .search-empty-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 22px;
+      font-weight: 300;
+      color: var(--text2);
+    }
+
+    .search-empty-sub {
+      font-size: 13px;
+      color: var(--text3);
+      line-height: 1.6;
+      max-width: 320px;
+    }
+
+    .search-results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 20px;
+    }
+
+    .search-results-count {
+      font-size: 12px;
+      color: var(--text3);
+      margin-bottom: 24px;
+      letter-spacing: 0.04em;
+    }
+
+    .search-results-count span {
+      color: var(--accent);
+    }
+
+    /* ── FOR YOU PAGE ── */
+    .fy-hero {
+      padding: 52px 40px 44px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .fy-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(201, 169, 110, 0.05) 0%, transparent 70%), repeating-linear-gradient(135deg, rgba(201, 169, 110, 0.015) 0px, rgba(201, 169, 110, 0.015) 1px, transparent 1px, transparent 30px), linear-gradient(160deg, #10140f 0%, #181818 60%);
+      z-index: 0;
+    }
+
+    .fy-hero-inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .fy-label {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .fy-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 40px;
+      font-weight: 300;
+      color: var(--text);
+      margin-bottom: 10px;
+      line-height: 1.1;
+    }
+
+    .fy-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .fy-sub {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.7;
+      max-width: 500px;
+      font-weight: 300;
+    }
+
+    /* user id input bar */
+    .fy-input-row {
+      display: flex;
+      gap: 0;
+      max-width: 480px;
+      margin-top: 28px;
+    }
+
+    .fy-input {
+      flex: 1;
+      padding: 13px 18px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-right: none;
+      border-radius: 2px 0 0 2px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .fy-input:focus {
+      border-color: var(--accent);
+    }
+
+    .fy-input::placeholder {
+      color: var(--text3);
+    }
+
+    .fy-btn {
+      padding: 13px 22px;
+      background: var(--accent);
+      border: none;
+      border-radius: 0 2px 2px 0;
+      color: #111;
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .fy-btn:hover {
+      opacity: 0.88;
+    }
+
+    /* how it works strip */
+    .fy-how {
+      display: flex;
+      gap: 0;
+      padding: 0 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .fy-how-step {
+      flex: 1;
+      padding: 20px 0 20px 24px;
+      border-left: 1px solid var(--border);
+      position: relative;
+    }
+
+    .fy-how-step:first-child {
+      padding-left: 0;
+      border-left: none;
+    }
+
+    .fy-how-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 300;
+      color: rgba(201, 169, 110, 0.2);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .fy-how-label {
+      font-size: 11px;
+      color: var(--text3);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .fy-how-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.5;
+      font-weight: 300;
+    }
+
+    /* recs area */
+    .fy-recs {
+      padding: 36px 40px 60px;
+    }
+
+    .fy-recs-header {
+      margin-bottom: 28px;
+    }
+
+    .fy-recs-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .fy-recs-sub {
+      font-size: 13px;
+      color: var(--text3);
+    }
+
+    .fy-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 40px;
+      text-align: center;
+      gap: 14px;
+      border: 1px dashed var(--border2);
+      border-radius: 4px;
+    }
+
+    .fy-placeholder-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.4;
+    }
+
+    .fy-placeholder-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--accent);
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    .fy-placeholder-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 300;
+      color: var(--text2);
+    }
+
+    .fy-placeholder-sub {
+      font-size: 13px;
+      color: var(--text3);
+      line-height: 1.6;
+      max-width: 300px;
+    }
+
+    /* match score badge on For You cards */
+    .match-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .match-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ── SEARCH AUTOCOMPLETE ── */
+    .search-bar-wrap {
+      position: relative;
+    }
+
+    .search-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 60px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-top: none;
+      border-radius: 0 0 2px 2px;
+      display: none;
+      z-index: 20;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .search-suggestions.show {
+      display: block;
+    }
+
+    .search-suggestion-item {
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .search-suggestion-item:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .search-suggestion-category {
+      padding: 6px 20px 4px;
+      font-size: 10px;
+      color: var(--text3);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-top: 1px solid var(--border);
+    }
+
+    .search-suggestion-category:first-child {
+      border-top: none;
+    }
+
+    /* ── SEARCH GENRE CHIPS ── */
+    .search-genre-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      display: none;
+    }
+
+    .search-genre-row.visible {
+      display: flex;
+    }
+
+    /* ── ONBOARDING ── */
+    .onboard {
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    .ob-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--accent);
+      margin-bottom: 6px;
+      text-align: center;
+      letter-spacing: 0.05em;
+    }
+
+    .ob-tagline {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 44px;
+      text-align: center;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .ob-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 36px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .ob-step {
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .ob-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: var(--text);
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .ob-desc {
+      font-size: 14px;
+      color: var(--text2);
+      margin-bottom: 28px;
+      line-height: 1.6;
+      font-weight: 300;
+    }
+
+    .ob-label {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .genre-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 28px;
+    }
+
+    .genre-opt {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      font-size: 12px;
+      color: var(--text3);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      background: transparent;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .genre-opt:hover,
+    .genre-opt.sel {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .ob-input-wrap {
+      position: relative;
+      margin-bottom: 28px;
+    }
+
+    .ob-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .ob-input:focus {
+      border-color: var(--border2);
+    }
+
+    .ob-input::placeholder {
+      color: var(--text3);
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-top: none;
+      border-radius: 0 0 2px 2px;
+      display: none;
+      z-index: 10;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .suggestions.show {
+      display: block;
+    }
+
+    .suggestion-item {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .suggestion-item:hover {
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .ob-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 2px;
+      color: #111;
+      font-size: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .ob-btn:hover {
+      opacity: 0.88;
+    }
+
+    .ob-progress {
+      display: flex;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .ob-dot {
+      width: 20px;
+      height: 2px;
+      border-radius: 1px;
+      background: var(--border2);
+    }
+
+    .ob-dot.active {
+      background: var(--accent);
+    }
+
+    /* DEV SWITCHER */
+    .switcher {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      display: flex;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      padding: 6px;
+      z-index: 100;
+    }
+
+    .sw-btn {
+      font-size: 11px;
+      padding: 6px 14px;
+      border: none;
+      border-radius: 2px;
+      background: transparent;
+      color: var(--text3);
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+    }
+
+    .sw-btn.active {
+      background: var(--accent);
+      color: #111;
+    }
+  
+    /* ── BOOK DETAIL MODAL ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px;opacity:0;pointer-events:none;transition:opacity 0.25s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:var(--surface);border:1px solid var(--border2);border-radius:6px;width:100%;max-width:720px;max-height:90vh;overflow-y:auto;position:relative;transform:translateY(16px);transition:transform 0.25s;scrollbar-width:none;}
+    .modal::-webkit-scrollbar{display:none;}
+    .modal-overlay.open .modal{transform:translateY(0);}
+    .modal-close{position:sticky;top:0;z-index:10;display:flex;justify-content:flex-end;padding:14px 16px 0;background:var(--surface);}
+    .modal-close-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border2);background:var(--surface2);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all 0.2s;line-height:1;}
+    .modal-close-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .modal-body{display:flex;gap:28px;padding:8px 28px 28px;}
+    .modal-cover{width:160px;min-width:160px;height:230px;border-radius:3px;overflow:hidden;background:var(--surface2);flex-shrink:0;}
+    .modal-cover img{width:100%;height:100%;object-fit:cover;display:block;}
+    .modal-cover-fallback{width:100%;height:100%;display:flex;align-items:flex-end;padding:12px;}
+    .modal-cover-fallback span{font-family:'Cormorant Garamond',serif;font-size:48px;font-weight:300;color:rgba(201,169,110,0.25);}
+    .modal-info{flex:1;min-width:0;}
+    .modal-genre{font-size:10px;color:var(--accent);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:8px;}
+    .modal-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:var(--text);line-height:1.2;margin-bottom:6px;}
+    .modal-author{font-size:14px;color:var(--text2);margin-bottom:16px;}
+    .modal-rating-row{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+    .modal-stars{display:flex;gap:3px;}
+    .modal-star{width:12px;height:12px;clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:var(--accent);}
+    .modal-star.empty{background:var(--border2);}
+    .modal-rating-num{font-size:20px;font-weight:500;color:var(--text);font-family:'Cormorant Garamond',serif;}
+    .modal-rating-count{font-size:12px;color:var(--text3);}
+    .modal-desc-label{font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px;}
+    .modal-desc{font-size:14px;color:var(--text2);line-height:1.75;font-weight:300;}
+    .modal-similar{padding:0 28px 32px;}
+    .modal-similar-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:400;color:var(--text);margin-bottom:16px;padding-top:20px;border-top:1px solid var(--border);}
+    .modal-similar-row{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;}
+    .modal-similar-row::-webkit-scrollbar{display:none;}
+    .modal-sim-card{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:10px;min-width:120px;max-width:120px;cursor:pointer;transition:border-color 0.2s,transform 0.2s;flex-shrink:0;}
+    .modal-sim-card:hover{border-color:var(--accent);transform:translateY(-2px);}
+    .modal-sim-cover{width:100%;height:80px;border-radius:2px;margin-bottom:8px;overflow:hidden;background:var(--border);}
+    .modal-sim-cover img{width:100%;height:100%;object-fit:cover;display:block;}
+    .modal-sim-title{font-size:11px;font-weight:500;color:var(--text);line-height:1.3;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .modal-sim-author{font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .modal-skel-row{display:flex;gap:12px;}
+    .modal-skel-card{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:10px;min-width:120px;}
+
+    </style>
+</head>
+
+<body>
+
+  <!-- ═══════════ ONBOARDING ═══════════ -->
+  <div class="page active" id="pg-onboard">
+    <div class="onboard">
+      <div class="ob-logo">Folio</div>
+      <div class="ob-tagline">Your personal literary guide</div>
+      <div class="ob-card">
+        <div class="ob-step">Step 1 of 1</div>
+        <div class="ob-title">Tell us your taste</div>
+        <div class="ob-desc">Pick your favourite genres and an author you love — we'll do the rest.</div>
+        <div class="ob-label">Genres you enjoy</div>
+        <div class="genre-grid">
+          <div class="genre-opt" onclick="toggleGenre(this)" data-genre="Fantasy">Fantasy</div>
+          <div class="genre-opt" onclick="toggleGenre(this)" data-genre="Sci-Fi">Sci-Fi</div>
+          <div class="genre-opt" onclick="toggleGenre(this)" data-genre="Mystery">Mystery</div>
+          <div class="genre-opt" onclick="toggleGenre(this)" data-genre="Thriller">Thriller</div>
+          <div class="genre-opt" onclick="toggleGenre(this)" data-genre="Non-fiction">Non-fiction</div>
+          <div class="genre-opt" onclick="toggleGenre(this)" data-genre="Adventure">Adventure</div>
+        </div>
+        <div class="ob-label">Favourite author</div>
+        <div class="ob-input-wrap">
+          <input class="ob-input" id="author-input" placeholder="Start typing a name..."
+            oninput="showSuggestions(this.value)" onblur="hideSuggestions()">
+          <div class="suggestions" id="suggestions"></div>
+        </div>
+        <button class="ob-btn" onclick="goToHome()">Continue to my feed</button>
+      </div>
+      <div class="ob-progress">
+        <div class="ob-dot active"></div>
+        <div class="ob-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ HOME ═══════════ -->
+  <div class="page" id="pg-home">
+    <div class="nav">
+      <div class="nav-logo">Folio</div>
+      <div class="nav-links">
+        <span class="nav-link active" onclick="navTo('home',this)">Home</span>
+        <span class="nav-link" onclick="navTo('search',this)">Search</span>
+        <span class="nav-link" onclick="navTo('foryou',this)">For You</span>
+      </div>
+      <button class="nav-btn">Sign out</button>
+    </div>
+    <div class="hero">
+      <div class="hero-line"></div>
+      <div class="hero-title">Your next<br><em>great read</em><br>is waiting.</div>
+      <div class="hero-sub">Machine learning meets literature — personalised recommendations that actually understand
+        your taste.</div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Trending</div>
+        <span class="section-see" onclick="openViewAll('trending','Trending Now')">View all</span>
+      </div>
+      <div class="cards-row" id="trending-row"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title" id="author-section-title">Because you like...</div>
+        <span class="section-see" id="author-view-all">View all</span>
+      </div>
+      <div class="cards-row" id="author-row"></div>
+    </div>
+    <div class="sdiv"></div>
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">By genre</div>
+        <span class="section-see" id="genre-view-all">View all</span>
+      </div>
+    </div>
+    <div class="genre-row" id="genre-chips-row"></div>
+    <div style="padding:0 40px 40px">
+      <div class="cards-row" id="genre-row"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SEARCH ═══════════ -->
+  <div class="page" id="pg-search">
+    <div class="nav">
+      <div class="nav-logo" onclick="navTo('home', document.querySelector('#pg-search .nav-link'))">Folio</div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="navTo('home',this)">Home</span>
+        <span class="nav-link active" onclick="navTo('search',this)">Search</span>
+        <span class="nav-link" onclick="navTo('foryou',this)">For You</span>
+      </div>
+      <button class="nav-btn">Sign out</button>
+    </div>
+
+    <div class="search-hero">
+      <div class="search-hero-inner">
+        <div class="search-label">Content-based search</div>
+        <div class="search-title">Find your<br><em>next chapter</em></div>
+        <div class="search-bar-wrap">
+          <input class="search-input" id="search-input" placeholder="Search by title, author, or keyword..."
+            oninput="onSearchInput(this.value)" onblur="hideSearchSuggestions()"
+            onkeydown="if(event.key==='Enter'){hideSearchSuggestions();doSearch();}">
+          <div class="search-suggestions" id="search-suggestions"></div>
+          <button class="search-btn" onclick="doSearch()">Search</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-tabs">
+      <div class="search-tab active" onclick="setSearchTab(this,'all')" data-tab="all">All</div>
+      <div class="search-tab" onclick="setSearchTab(this,'title')" data-tab="title">By Title</div>
+      <div class="search-tab" onclick="setSearchTab(this,'author')" data-tab="author">By Author</div>
+      <div class="search-tab" onclick="setSearchTab(this,'genre')" data-tab="genre">By Genre</div>
+    </div>
+    <div class="search-genre-row" id="search-genre-row"></div>
+
+    <div class="search-results" id="search-results">
+      <div class="search-empty">
+        <div class="search-empty-icon">◎</div>
+        <div class="search-empty-title">Search the catalogue</div>
+        <div class="search-empty-sub">Type a book title, author name, or keyword above to find recommendations powered
+          by content-based filtering.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FOR YOU ═══════════ -->
+  <div class="page" id="pg-foryou">
+    <div class="nav">
+      <div class="nav-logo">Folio</div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="navTo('home',this)">Home</span>
+        <span class="nav-link" onclick="navTo('search',this)">Search</span>
+        <span class="nav-link active" onclick="navTo('foryou',this)">For You</span>
+      </div>
+      <button class="nav-btn">Sign out</button>
+    </div>
+
+    <div class="fy-hero">
+      <div class="fy-hero-inner">
+        <div class="fy-label">Collaborative filtering</div>
+        <div class="fy-title">Curated<br><em>just for you</em></div>
+        <div class="fy-sub">Our model finds readers with taste like yours and surfaces books they loved — that you
+          haven't discovered yet.</div>
+        <div class="fy-input-row">
+          <input class="fy-input" id="fy-userid" placeholder="Enter your User ID..." type="number"
+            onkeydown="if(event.key==='Enter') loadForYou()">
+          <button class="fy-btn" onclick="loadForYou()">Get my picks</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fy-how">
+      <div class="fy-how-step">
+        <div class="fy-how-num">01</div>
+        <div class="fy-how-label">Your history</div>
+        <div class="fy-how-desc">We look at books you and similar readers have rated</div>
+      </div>
+      <div class="fy-how-step">
+        <div class="fy-how-num">02</div>
+        <div class="fy-how-label">Find neighbours</div>
+        <div class="fy-how-desc">Our model finds users whose taste closely matches yours</div>
+      </div>
+      <div class="fy-how-step">
+        <div class="fy-how-num">03</div>
+        <div class="fy-how-label">Surface gems</div>
+        <div class="fy-how-desc">Books they loved that you haven't read rise to the top</div>
+      </div>
+    </div>
+
+    <div class="fy-recs">
+      <div id="fy-results">
+        <div class="fy-placeholder">
+          <div class="fy-placeholder-icon">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z" />
+            </svg>
+          </div>
+          <div class="fy-placeholder-title">Enter your User ID to begin</div>
+          <div class="fy-placeholder-sub">Your ID is your unique identifier in our dataset. Once you enter it, we'll
+            generate personalised picks just for you.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ VIEW ALL ═══════════ -->
+  <div class="page" id="pg-viewall">
+    <div class="nav">
+      <div class="nav-logo" onclick="backToHome()">Folio</div>
+      <div class="nav-links">
+        <span class="nav-link" onclick="navTo('home',this)">Home</span>
+        <span class="nav-link" onclick="navTo('search',this)">Search</span>
+        <span class="nav-link" onclick="navTo('foryou',this)">For You</span>
+      </div>
+      <button class="nav-btn">Sign out</button>
+    </div>
+    <div class="va-header">
+      <div class="va-back" onclick="backToHome()">
+        <svg viewBox="0 0 24 24">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        Back
+      </div>
+      <div class="va-title" id="va-title">All Books</div>
+    </div>
+    <div class="va-grid" id="va-grid"></div>
+  </div>
+
+  <!-- DEV SWITCHER -->
+  <div class="switcher">
+    <button class="sw-btn active" onclick="showPage('onboard',this)">Onboarding</button>
+    <button class="sw-btn" onclick="showPage('home',this)">Home</button>
+    <button class="sw-btn" onclick="showPage('search',this)">Search</button>
+    <button class="sw-btn" onclick="showPage('foryou',this)">For You</button>
+  </div>
+
+  <script>
+    const API_BASE = 'http://127.0.0.1:5000/api';
+    const covers = ['bc1', 'bc2', 'bc3', 'bc4', 'bc5'];
+    let userPrefs = { genres: [], author: '' };
+    let cache = { trending: [], author: [], genre: {} };
+    let searchTab = 'all';
+
+    // ── HELPERS ──
+    function makeCover(book, index, big = false) {
+      const bc = covers[index % covers.length];
+      const num = String(index + 1).padStart(2, '0');
+      const numSize = big ? 'font-size:40px' : '';
+      if (book.coverImg) return `<img src="${book.coverImg}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+      return `<div class="cover-fallback ${bc}"><span class="cover-num" style="${numSize}">${num}</span></div>`;
+    }
+
+    function bookCard(book, i) {
+      const rating = book.avg_rating ? parseFloat(book.avg_rating).toFixed(1) : '—';
+      const pct = book.avg_rating ? Math.min(100, Math.round(book.avg_rating / 10 * 100)) : 0;
+      return `<div class="book-card" onclick='openBookDetail(${JSON.stringify(book).replace(/'/g, "&#39;")})'>
+    <div class="book-cover">${makeCover(book, i)}</div>
+    <div class="book-title" title="${book.title || ''}">${book.title || 'Untitled'}</div>
+    <div class="book-author">${book.author || ''}</div>
+    <div class="book-desc">${book.description || ''}</div>
+    <div class="book-rating"><div class="rating-bar"><div class="rating-fill" style="width:${pct}%"></div></div><span class="rating-num">${rating}</span></div>
+  </div>`;
+    }
+
+    function gridCard(book, i, showMatch = false) {
+      const rating = book.avg_rating ? parseFloat(book.avg_rating).toFixed(1) : '—';
+      const pct = book.avg_rating ? Math.min(100, Math.round(book.avg_rating / 10 * 100)) : 0;
+      const match = showMatch && book.score ? `<div class="match-badge"><span class="match-dot"></span>${Math.round(book.score * 100)}% match</div>` : '';
+      return `<div class="grid-card" onclick='openBookDetail(${JSON.stringify(book).replace(/'/g, "&#39;")})'>
+    <div class="grid-cover">${makeCover(book, i, true)}</div>
+    ${match}
+    <div class="grid-title">${book.title || 'Untitled'}</div>
+    <div class="grid-author">${book.author || ''}</div>
+    <div class="grid-desc">${book.description || ''}</div>
+    <div class="book-rating"><div class="rating-bar"><div class="rating-fill" style="width:${pct}%"></div></div><span class="rating-num">${rating}</span></div>
+  </div>`;
+    }
+
+    function skeletons(n = 5) {
+      return Array.from({ length: n }, () => `<div class="skeleton-card"><div class="skel skel-cover"></div><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:55%"></div><div class="skel skel-line" style="width:35%;height:1px"></div></div>`).join('');
+    }
+    function gridSkeletons(n = 12) {
+      return Array.from({ length: n }, () => `<div class="skel-grid-card"><div class="skel skel-grid-cover"></div><div class="skel skel-line" style="width:85%;margin-bottom:6px"></div><div class="skel skel-line" style="width:55%"></div></div>`).join('');
+    }
+    function errorState(msg) { return `<div class="api-error"><span>⚠</span>${msg}</div>`; }
+    function getBooks(data) { return Array.isArray(data) ? data : (data.books || data.results || []); }
+
+    // ── HOME LOADERS ──
+    async function loadTrending() {
+      const row = document.getElementById('trending-row');
+      row.innerHTML = skeletons(5);
+      try {
+        const res = await fetch(`${API_BASE}/trending`);
+        if (!res.ok) throw new Error();
+        const books = getBooks(await res.json());
+        cache.trending = books;
+        row.innerHTML = books.length ? books.map(bookCard).join('') : errorState('No trending books found.');
+      } catch { row.innerHTML = errorState('Could not load trending books. Is Flask running?'); }
+    }
+
+    async function loadByAuthor(author) {
+      if (!author) return;
+      const row = document.getElementById('author-row');
+      row.innerHTML = skeletons(4);
+      document.getElementById('author-section-title').textContent = `Because you like ${author}`;
+      document.getElementById('author-view-all').onclick = () => openViewAll('author', `Because you like ${author}`);
+      try {
+        // Try primary name first, then a normalized variant (handles "J.K. Rowling" vs "J. K. Rowling")
+        const res = await fetch(`${API_BASE}/by-author?author=${encodeURIComponent(author)}`);
+        if (!res.ok) throw new Error();
+        let books = getBooks(await res.json());
+        // If only 1 result, try alternate spacing (e.g. "J.K." ↔ "J. K.")
+        if (books.length <= 1) {
+          const alt = author.replace(/\.\s*/g, '. ').replace(/\s+/g, ' ').trim();
+          if (alt !== author) {
+            const res2 = await fetch(`${API_BASE}/by-author?author=${encodeURIComponent(alt)}`);
+            if (res2.ok) {
+              const books2 = getBooks(await res2.json());
+              if (books2.length > books.length) books = books2;
+            }
+          }
+          // Also try without dots: "JK Rowling"
+          const noDots = author.replace(/\./g, '').replace(/\s+/g, ' ').trim();
+          if (noDots !== author && books.length <= 1) {
+            const res3 = await fetch(`${API_BASE}/by-author?author=${encodeURIComponent(noDots)}`);
+            if (res3.ok) {
+              const books3 = getBooks(await res3.json());
+              if (books3.length > books.length) books = books3;
+            }
+          }
+        }
+        cache.author = books;
+        row.innerHTML = books.length ? books.map(bookCard).join('') : errorState(`No books found for "${author}".`);
+      } catch { row.innerHTML = errorState('Could not load author recommendations.'); }
+    }
+
+    async function loadByGenre(genre) {
+      const row = document.getElementById('genre-row');
+      row.innerHTML = skeletons(4);
+      document.getElementById('genre-view-all').onclick = () => openViewAll('genre:' + genre, genre);
+      try {
+        const res = await fetch(`${API_BASE}/by-genre?genre=${encodeURIComponent(genre)}`);
+        if (!res.ok) throw new Error();
+        const books = getBooks(await res.json());
+        cache.genre[genre] = books;
+        row.innerHTML = books.length ? books.map(bookCard).join('') : errorState(`No books found for "${genre}".`);
+      } catch { row.innerHTML = errorState('Could not load genre recommendations.'); }
+    }
+
+    // ── SEARCH TABS ──
+    function setSearchTab(el, tab) {
+      document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      searchTab = tab;
+      const genreRow = document.getElementById('search-genre-row');
+      if (tab === 'genre') {
+        genreRow.classList.add('visible');
+        buildSearchGenreChips();
+      } else {
+        genreRow.classList.remove('visible');
+      }
+      // Update placeholder text
+      const placeholders = { all: 'Search by title, author, or keyword...', title: 'Search by book title...', author: 'Search by author name...', genre: 'Select a genre below...' };
+      document.getElementById('search-input').placeholder = placeholders[tab] || 'Search...';
+    }
+
+    function buildSearchGenreChips() {
+      const genres = ['Fantasy', 'Sci-Fi', 'Mystery', 'Thriller', 'Classic', 'Romance', 'Non-fiction', 'Adventure', 'Horror', 'Biography'];
+      const row = document.getElementById('search-genre-row');
+      if (row.innerHTML) return; // already built
+      row.innerHTML = genres.map((g, i) =>
+        `<span class="genre-chip ${i === 0 ? 'selected' : ''}" onclick="searchByGenreChip(this,'${g}')">${g}</span>`
+      ).join('');
+      // Auto-load first genre
+      doSearchByGenre(genres[0]);
+    }
+
+    function searchByGenreChip(el, genre) {
+      document.querySelectorAll('#search-genre-row .genre-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      doSearchByGenre(genre);
+    }
+
+    async function doSearchByGenre(genre) {
+      const results = document.getElementById('search-results');
+      results.innerHTML = `<div style="padding:12px 0 20px"><div class="skel skel-line" style="width:140px;height:10px;margin-bottom:24px"></div></div><div class="search-results-grid">${gridSkeletons(8)}</div>`;
+      try {
+        const res = await fetch(`${API_BASE}/by-genre?genre=${encodeURIComponent(genre)}`);
+        if (!res.ok) throw new Error();
+        const books = getBooks(await res.json());
+        if (!books.length) {
+          results.innerHTML = `<div class="search-empty"><div class="search-empty-icon">◎</div><div class="search-empty-title">No results found</div><div class="search-empty-sub">No books found for the genre "${genre}".</div></div>`;
+          return;
+        }
+        results.innerHTML = `<div class="search-results-count">Showing <span>${books.length}</span> books in <span>${genre}</span></div><div class="search-results-grid">${books.map((b, i) => gridCard(b, i)).join('')}</div>`;
+      } catch {
+        results.innerHTML = errorState('Could not load genre results. Is Flask running?');
+      }
+    }
+
+    // ── SEARCH AUTOCOMPLETE ──
+    const searchAuthors = ['J.K. Rowling', 'J. K. Rowling', 'J.R.R. Tolkien', 'Stephen King', 'Agatha Christie', 'George Orwell', 'Frank Herbert', 'Dan Brown', 'Paulo Coelho', 'Toni Morrison', 'Haruki Murakami', 'Jane Austen', 'F. Scott Fitzgerald', 'Ernest Hemingway', 'Fyodor Dostoevsky', 'Leo Tolstoy', 'Charles Dickens', 'Mark Twain', 'Oscar Wilde', 'Virginia Woolf'];
+    const searchGenres = ['Fantasy', 'Sci-Fi', 'Mystery', 'Thriller', 'Classic', 'Romance', 'Non-fiction', 'Adventure', 'Horror', 'Biography'];
+
+    function onSearchInput(val) {
+      const s = document.getElementById('search-suggestions');
+      if (!val || val.length < 2) { s.classList.remove('show'); return; }
+      const lc = val.toLowerCase();
+
+      let matchedAuthors = [];
+      let matchedGenres = [];
+
+      if (searchTab === 'all' || searchTab === 'author') {
+        matchedAuthors = searchAuthors.filter(a => a.toLowerCase().includes(lc));
+      }
+      if (searchTab === 'all' || searchTab === 'genre') {
+        matchedGenres = searchGenres.filter(g => g.toLowerCase().includes(lc));
+      }
+      if (!matchedAuthors.length && !matchedGenres.length) { s.classList.remove('show'); return; }
+      let html = '';
+      if (matchedAuthors.length) {
+        html += `<div class="search-suggestion-category">Authors</div>`;
+        html += matchedAuthors.slice(0, 5).map(a => `<div class="search-suggestion-item" onmousedown="selectSearchSuggestion('${a}','author')">📖 ${a}</div>`).join('');
+      }
+      if (matchedGenres.length) {
+        html += `<div class="search-suggestion-category">Genres</div>`;
+        html += matchedGenres.slice(0, 4).map(g => `<div class="search-suggestion-item" onmousedown="selectSearchSuggestion('${g}','genre')">🏷 ${g}</div>`).join('');
+      }
+      s.innerHTML = html;
+      s.classList.add('show');
+    }
+
+    function selectSearchSuggestion(val, type) {
+      document.getElementById('search-input').value = val;
+      document.getElementById('search-suggestions').classList.remove('show');
+      if (type === 'genre') {
+        // Switch to genre tab and load
+        const genreTab = document.querySelector('[data-tab="genre"]');
+        setSearchTab(genreTab, 'genre');
+        // Select matching chip
+        setTimeout(() => {
+          const chips = document.querySelectorAll('#search-genre-row .genre-chip');
+          chips.forEach(c => {
+            if (c.textContent === val) { searchByGenreChip(c, val); c.classList.add('selected'); }
+            else c.classList.remove('selected');
+          });
+        }, 50);
+      } else {
+        const authorTab = document.querySelector('[data-tab="author"]');
+        setSearchTab(authorTab, 'author');
+        setTimeout(doSearch, 50);
+      }
+    }
+
+    function hideSearchSuggestions() {
+      setTimeout(() => document.getElementById('search-suggestions').classList.remove('show'), 150);
+    }
+
+    async function doSearch() {
+      if (searchTab === 'genre') return; // genre tab handles its own search
+      const q = document.getElementById('search-input').value.trim();
+      if (!q) return;
+      const results = document.getElementById('search-results');
+      results.innerHTML = `<div style="padding:12px 0 20px"><div class="skel skel-line" style="width:140px;height:10px;margin-bottom:24px"></div></div>` + `<div class="search-results-grid">${gridSkeletons(8)}</div>`;
+
+      let url = `${API_BASE}/search?q=${encodeURIComponent(q)}&type=${searchTab}`;
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+        const books = getBooks(await res.json());
+        if (!books.length) {
+          results.innerHTML = `<div class="search-empty">
+        <div class="search-empty-icon">◎</div>
+        <div class="search-empty-title">No results found</div>
+        <div class="search-empty-sub">Try a different title, author, or keyword.</div>
+      </div>`;
+          return;
+        }
+        results.innerHTML = `
+      <div class="search-results-count">Found <span>${books.length}</span> result${books.length !== 1 ? 's' : ''} for "<span>${q}</span>"</div>
+      <div class="search-results-grid">${books.map((b, i) => gridCard(b, i)).join('')}</div>`;
+      } catch {
+        results.innerHTML = errorState('Could not complete search. Is Flask running?');
+      }
+    }
+
+    // ── FOR YOU (collaborative filtering) ──
+    async function loadForYou() {
+      const userId = document.getElementById('fy-userid').value.trim();
+      if (!userId) return;
+      const results = document.getElementById('fy-results');
+      results.innerHTML = `<div class="fy-recs-header"><div class="fy-recs-title">Finding your picks...</div><div class="fy-recs-sub">Analysing reading patterns across similar users</div></div><div class="search-results-grid">${gridSkeletons(8)}</div>`;
+
+      try {
+        const res = await fetch(`${API_BASE}/for-you?user_id=${encodeURIComponent(userId)}`);
+        if (!res.ok) throw new Error();
+        const books = getBooks(await res.json());
+        if (!books.length) {
+          results.innerHTML = `<div class="fy-placeholder">
+        <div class="fy-placeholder-icon"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg></div>
+        <div class="fy-placeholder-title">No recommendations yet</div>
+        <div class="fy-placeholder-sub">User ID ${userId} may not have enough ratings. Try a different ID.</div>
+      </div>`;
+          return;
+        }
+        results.innerHTML = `
+      <div class="fy-recs-header">
+        <div class="fy-recs-title">Your personalised picks</div>
+        <div class="fy-recs-sub">${books.length} recommendations based on User ${userId}'s taste profile</div>
+      </div>
+      <div class="search-results-grid">${books.map((b, i) => gridCard(b, i, true)).join('')}</div>`;
+      } catch {
+        results.innerHTML = `<div class="fy-placeholder">
+      <div class="fy-placeholder-icon"><svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 1 0 0 10A5 5 0 0 0 12 2zm0 12c-5.33 0-8 2.67-8 4v2h16v-2c0-1.33-2.67-4-8-4z"/></svg></div>
+      <div class="fy-placeholder-title">Collaborative model not connected yet</div>
+      <div class="fy-placeholder-sub">Add a <code style="color:var(--accent);font-size:12px">/api/for-you?user_id=</code> route to your Flask app to power this page.</div>
+    </div>`;
+      }
+    }
+
+    // ── VIEW ALL ──
+    async function openViewAll(type, label) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pg-viewall').classList.add('active');
+      document.getElementById('va-title').textContent = label;
+      window.scrollTo(0, 0);
+      const grid = document.getElementById('va-grid');
+      grid.innerHTML = gridSkeletons();
+      try {
+        let books = [];
+        if (type === 'trending') { const r = await fetch(`${API_BASE}/trending`); books = getBooks(await r.json()); }
+        else if (type === 'author') { books = cache.author; }
+        else if (type.startsWith('genre:')) { books = cache.genre[type.replace('genre:', '')] || []; }
+        grid.innerHTML = books.length ? books.map((b, i) => gridCard(b, i)).join('') : errorState('No books to show.');
+      } catch { grid.innerHTML = errorState('Could not load books.'); }
+    }
+
+    function backToHome() {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pg-home').classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    // ── NAV ──
+    function navTo(page, el) {
+      const pageMap = { home: 'pg-home', search: 'pg-search', foryou: 'pg-foryou' };
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageMap[page]).classList.add('active');
+      window.scrollTo(0, 0);
+      // update active nav link across all nav bars
+      document.querySelectorAll('.nav-link').forEach(l => {
+        const target = l.getAttribute('onclick') || '';
+        if (target.includes(`'${page}'`)) l.classList.add('active');
+        else l.classList.remove('active');
+      });
+    }
+
+    // ── GENRE CHIPS ──
+    function buildGenreChips(genres) {
+      const all = ['Mystery', 'Fantasy', 'Romance', 'Classic', 'Sci-Fi', 'Horror', 'History', 'Biography', 'Young Adult', 'Non-fiction'];
+      const ordered = [...genres.map(g => {
+        const map = { 'Mystery & Thriller': 'Mystery', 'Science Fiction': 'Sci-Fi', 'Classics': 'Classic', 'Nonfiction': 'Non-fiction', 'Historical Fiction': 'History', 'Biography & Memoir': 'Biography' };
+        return map[g] || g;
+      }), ...all.filter(g => !genres.map(x => x).includes(g))];
+      document.getElementById('genre-chips-row').innerHTML = ordered.map((g, i) =>
+        `<span class="genre-chip ${i === 0 ? 'selected' : ''}" onclick="selectGenre(this)" data-genre="${g}">${g}</span>`
+      ).join('');
+    }
+    function selectGenre(el) {
+      document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      loadByGenre(el.dataset.genre);
+    }
+
+    // ── ONBOARDING ──
+    function toggleGenre(el) { el.classList.toggle('sel'); }
+    function goToHome() {
+      const selected = [...document.querySelectorAll('.genre-opt.sel')].map(e => e.dataset.genre);
+      const author = document.getElementById('author-input').value.trim();
+      userPrefs.genres = selected.length ? selected : ['Mystery & Thriller'];
+      userPrefs.author = author || 'Stephen King';
+      showPage('home', document.querySelectorAll('.sw-btn')[1]);
+      loadTrending(); loadByAuthor(userPrefs.author);
+      buildGenreChips(userPrefs.genres); loadByGenre(userPrefs.genres[0]);
+    }
+
+    // ── AUTHOR AUTOCOMPLETE ──
+    async function showSuggestions(val) {
+      const s = document.getElementById('suggestions');
+      if (!val || val.length < 2) { s.classList.remove('show'); return; }
+      try {
+        const res = await fetch(`${API_BASE}/authors?q=${encodeURIComponent(val)}`);
+        const authors = await res.json();
+        if (!authors.length) { s.classList.remove('show'); return; }
+        s.innerHTML = authors.map(a => `<div class="suggestion-item" onmousedown="selectAuthor('${a}')">${a}</div>`).join('');
+        s.classList.add('show');
+      } catch {
+        const fallback = ['Dean Koontz', 'James Patterson', 'Nora Roberts', 'Stephen King', 'John Grisham', 'Sue Monk Kidd', 'Nicholas Evans', 'Tom Clancy', 'Mary Higgins Clark'];
+        const m = fallback.filter(a => a.toLowerCase().includes(val.toLowerCase()));
+        if (!m.length) { s.classList.remove('show'); return; }
+        s.innerHTML = m.map(a => `<div class="suggestion-item" onmousedown="selectAuthor('${a}')">${a}</div>`).join('');
+        s.classList.add('show');
+      }
+    }
+    function selectAuthor(name) {
+      document.getElementById('author-input').value = name;
+      document.getElementById('suggestions').classList.remove('show');
+    }
+    function hideSuggestions() { setTimeout(() => document.getElementById('suggestions').classList.remove('show'), 150); }
+
+    // ── DEV PAGE SWITCHER ──
+    function showPage(name, btn) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById('pg-' + name).classList.add('active');
+      document.querySelectorAll('.sw-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      window.scrollTo(0, 0);
+      if (name === 'home') {
+        userPrefs.genres = userPrefs.genres.length ? userPrefs.genres : ['Mystery & Thriller'];
+        userPrefs.author = userPrefs.author || 'Stephen King';
+        loadTrending(); loadByAuthor(userPrefs.author);
+        buildGenreChips(userPrefs.genres); loadByGenre(userPrefs.genres[0]);
+      }
+    }
+  </script>
+
+<!-- ═══ BOOK DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="book-modal" onclick="closeModalOnOverlay(event)">
+  <div class="modal" id="modal-inner">
+    <div class="modal-close"><button class="modal-close-btn" onclick="closeBookDetail()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-cover" id="modal-cover"></div>
+      <div class="modal-info">
+        <div class="modal-genre" id="modal-genre"></div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-author" id="modal-author"></div>
+        <div class="modal-rating-row">
+          <div class="modal-stars" id="modal-stars"></div>
+          <div class="modal-rating-num" id="modal-rating-num"></div>
+          <div class="modal-rating-count" id="modal-rating-count"></div>
+        </div>
+        <div class="modal-desc-label">About this book</div>
+        <div class="modal-desc" id="modal-desc"></div>
+      </div>
+    </div>
+    <div class="modal-similar">
+      <div class="modal-similar-title">Similar books</div>
+      <div class="modal-similar-row" id="modal-similar-row">
+        <div class="modal-skel-row">
+          ${Array.from({length:5},()=>`<div class="modal-skel-card"><div class="skel" style="width:100%;height:80px;border-radius:2px;margin-bottom:8px"></div><div class="skel skel-line" style="width:85%;height:9px"></div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── BOOK DETAIL MODAL ──────────────────────────────────────────────
+let currentBook = null;
+
+function openBookDetail(book) {
+  currentBook = book;
+  const covers_fb = ['bc1','bc2','bc3','bc4','bc5'];
+
+  // Cover
+  const coverEl = document.getElementById('modal-cover');
+  if (book.coverImg) {
+    coverEl.innerHTML = `<img src="${book.coverImg}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`;
+  } else {
+    const bc = covers_fb[Math.floor(Math.random()*5)];
+    coverEl.innerHTML = `<div class="modal-cover-fallback ${bc}"><span>◈</span></div>`;
+  }
+
+  // Info
+  document.getElementById('modal-genre').textContent  = book.primary_genre || '';
+  document.getElementById('modal-title').textContent  = book.title || 'Untitled';
+  document.getElementById('modal-author').textContent = book.author || '';
+
+  // Stars (out of 10 → out of 5)
+  const rating = parseFloat(book.avg_rating) || 0;
+  const stars5 = rating / 2;
+  let starsHtml = '';
+  for (let i = 1; i <= 5; i++) {
+    starsHtml += `<div class="modal-star${i <= Math.round(stars5) ? '' : ' empty'}"></div>`;
+  }
+  document.getElementById('modal-stars').innerHTML = starsHtml;
+  document.getElementById('modal-rating-num').textContent = rating.toFixed(1);
+  const cnt = book.num_ratings;
+  document.getElementById('modal-rating-count').textContent = cnt > 0 ? `${cnt.toLocaleString()} ratings` : '';
+
+  // Full description — fetch from API for the complete text
+  document.getElementById('modal-desc').textContent = book.description || 'No description available.';
+  fetchFullDescription(book);
+
+  // Show modal
+  document.getElementById('book-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // Load similar books
+  loadSimilarBooks(book);
+}
+
+async function fetchFullDescription(book) {
+  try {
+    const res = await fetch(`${API_BASE}/book-detail?title=${encodeURIComponent(book.title)}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.description) {
+      document.getElementById('modal-desc').textContent = data.description || 'No description available.';
+    }
+  } catch {}
+}
+
+async function loadSimilarBooks(book) {
+  const row = document.getElementById('modal-similar-row');
+  // skeleton
+  row.innerHTML = Array.from({length:5}, () =>
+    `<div class="modal-skel-card"><div class="skel" style="width:100%;height:80px;border-radius:2px;margin-bottom:8px;background:linear-gradient(90deg,var(--border) 25%,var(--border2) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;"></div><div class="skel skel-line" style="width:85%;height:9px;background:linear-gradient(90deg,var(--border) 25%,var(--border2) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:2px;"></div></div>`
+  ).join('');
+
+  try {
+    // Similar = same genre, sorted by rating — exclude current book
+    const res = await fetch(`${API_BASE}/by-genre?genre=${encodeURIComponent(book.primary_genre)}&n=10`);
+    if (!res.ok) throw new Error();
+    const books = (await res.json()).filter(b => b.title !== book.title).slice(0, 8);
+
+    if (!books.length) { row.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">No similar books found.</div>'; return; }
+
+    row.innerHTML = books.map(b => {
+      const coverHtml = b.coverImg
+        ? `<img src="${b.coverImg}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`
+        : `<div style="width:100%;height:100%;background:var(--border)"></div>`;
+      const safeBook = JSON.stringify(b).replace(/'/g, '&#39;');
+      return `<div class="modal-sim-card" onclick='openBookDetail(${safeBook})'>
+        <div class="modal-sim-cover">${coverHtml}</div>
+        <div class="modal-sim-title">${b.title || 'Untitled'}</div>
+        <div class="modal-sim-author">${b.author || ''}</div>
+      </div>`;
+    }).join('');
+  } catch {
+    row.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:8px 0">Could not load similar books.</div>';
+  }
+}
+
+function closeBookDetail() {
+  document.getElementById('book-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  currentBook = null;
+}
+
+function closeModalOnOverlay(e) {
+  if (e.target === document.getElementById('book-modal')) closeBookDetail();
+}
+
+// Close on Escape key
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBookDetail(); });
+</script>
+
+</body>
+
+</html>

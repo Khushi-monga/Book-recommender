@@ -1,0 +1,52 @@
+import pandas as pd
+import numpy as np
+
+# Load
+users = pd.read_csv('Users.csv')
+users.columns = ['user_id', 'location', 'age']
+
+print("BEFORE cleaning:")
+print(f"  Total users:  {len(users):,}")
+print(f"  Age nulls:    {users['age'].isnull().sum():,}")
+print(f"  Age min/max:  {users['age'].min()} / {users['age'].max()}")
+
+# ---- STEP 1: Fix impossible ages ----
+# Keep only realistic ages: 5 to 100
+# Anyone outside this range → treat as null
+users.loc[users['age'] < 5,   'age'] = np.nan
+users.loc[users['age'] > 100, 'age'] = np.nan
+
+# ---- STEP 2: Fill missing ages with median ----
+# Median is better than mean here — less affected by outliers
+median_age = users['age'].median()
+users['age'] = users['age'].fillna(median_age)
+users['age'] = users['age'].astype(int)
+
+# ---- STEP 3: Clean location ----
+# Remove rows where location is completely empty or just "n/a"
+users = users[users['location'].notna()]
+users = users[users['location'].str.strip() != '']
+
+# Extract country from location (it's always the last part)
+# Format is: "city, state, country"
+users['country'] = users['location'].apply(
+    lambda x: x.split(',')[-1].strip().lower() if isinstance(x, str) else 'unknown'
+)
+
+# Replace n/a country with unknown
+users['country'] = users['country'].replace('', 'unknown')
+
+# ---- STEP 4: Remove duplicate users ----
+users = users.drop_duplicates(subset='user_id')
+
+print("\nAFTER cleaning:")
+print(f"  Total users:  {len(users):,}")
+print(f"  Age nulls:    {users['age'].isnull().sum()}")
+print(f"  Age min/max:  {users['age'].min()} / {users['age'].max()}")
+print(f"  Age median:   {users['age'].median()}")
+print(f"\nTop 10 countries:")
+print(users['country'].value_counts().head(10))
+
+# ---- SAVE ----
+users.to_csv('users_clean.csv', index=False)
+print("\nSaved users_clean.csv")
